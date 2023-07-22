@@ -1,0 +1,76 @@
+@use "../../variables.scss" as *;
+
+div.home
+{
+  header
+  {
+    border-bottom: 2px solid map-get($colors, "City-Lights");
+    padding: 12px 15px;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    img.logo
+    { width: 75px; }
+    
+    h1.brand-title
+    {
+      font-family: 'Roboto Condensed', sans-serif;
+      color: map-get($colors, "Bread-Color");
+      transform: translateY(10px);
+    }
+  }
+
+  div.options-list
+  {
+    margin-top: 2rem;
+    display: flex;
+    justify-content: space-around;
+
+    a.card
+    {
+      text-decoration: none;
+
+      width: 400px;
+      height: 400px;
+
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      align-items: center;
+
+      font-family: "Barlow Condensed", sans-serif;
+      color: map-get($colors, "Electromagnetic");
+
+      transition: all .30s ease-in-out;
+
+      &:hover
+      {
+        cursor: pointer;
+        border-color: map-get($colors, "Bread-Color");
+      }
+
+      &:hover h2
+      { color: map-get($colors, "Bread-Color"); }
+
+      &:hover img.card-logo
+      { transform: translateY(-10px); }
+
+      img.card-logo
+      {
+        margin-top: 2.5rem;
+        width: 100px;
+        transition: all .30s ease-in-out;
+      }
+
+      h2
+      { font-weight: 500; }
+
+      p {
+        font-weight: 400;
+        text-align: justify;
+      }
+    }
+  }
+}
