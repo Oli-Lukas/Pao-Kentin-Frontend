@@ -4,7 +4,7 @@ import Home        from './pages/Home';
 import BakeryOwner from './pages/BakeryOwner';
 import Baker       from './pages/Baker';
 import User        from './pages/User';
-import DetalhePao from './pages/DetalhePao';
+import DetalhePao  from './pages/DetalhePao';
 
 const router = createBrowserRouter([
   {
@@ -32,7 +32,6 @@ const router = createBrowserRouter([
 function App() {
   return (
     <div className="App">
-      {/* <Home /> */}
       <RouterProvider router={router} />
     </div>
   );
