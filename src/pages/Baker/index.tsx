@@ -1,65 +1,72 @@
 import { useEffect, useState } from 'react';
-import axios from 'axios';
+import { v4 as uuid4 }         from 'uuid';
+
+import { Bread } from '../../types/Bread';
+import { api }   from '../../lib/axios';
 
 import "./styles.scss";
 
 function Baker()
 {
-  const [paes, setPaes] = useState<any>([]);
+  const [breadList    , setBreadList    ] = useState<Bread[]>([]);
   const [chosedBreadId, setChosedBreadId] = useState<number>(0);
-  const [chosedBread, setChosedBread] = useState();
-  const [time, setTime] = useState('');
+  const [chosedBread  , setChosedBread  ] = useState<Bread>();
+  const [time         , setTime         ] = useState<string>('');
 
-  useEffect(() => {
+  useEffect(loadBread    , [chosedBreadId]);
+  useEffect(loadAllBreads, []);
 
-    async function fetchBread()
-    {
-      const response = await axios.get(`http://localhost:8080/pao/${chosedBreadId}`);
-      setChosedBread(response.data);
-    }
+  function loadBread()
+  {
+    api.get<Bread>(`bread/${chosedBreadId}`)
+      .then(response => { setChosedBread(response.data); })
+      .catch(error => { console.error(error); });
+  }
 
-    fetchBread();
+  function loadAllBreads()
+  {
+    api.get<Bread[]>(`bread`)
+      .then(response => { setBreadList(response.data); })
+      .catch(error => { console.error(error); });
+  }
 
-  }, [chosedBreadId]);
+  function createBatch()
+  {
+    const breadId: number = chosedBreadId;
+    const batchStartTimestamp: number = getBatchStartTimestamp();
+    const batchEndTimestamp: number   = getBatchEndTimestamp(batchStartTimestamp);
 
-  useEffect(() => {
-    async function fetchData()
-    {
-      const response = await axios.get(`http://localhost:8080/pao`);
-      setPaes(response.data);
-    }
+    console.log(new Date(batchStartTimestamp));
+    console.log(new Date(batchEndTimestamp));
 
-    fetchData();
-  }, []);
-
-  const criaFornada = async (e: MouseEvent) => {
-    const id = chosedBreadId;
-    let inicioDaFornada: Date | number = new Date();
-
-    inicioDaFornada.setHours(Number(time.split(":")[0]));
-    inicioDaFornada.setMinutes(Number(time.split(":")[1]));
-    inicioDaFornada.setSeconds(0);
-
-    const tempoDePreparoEmMilisegundos = (chosedBread?.tempoDePreparoEmSegundos ?? 0) * 1000;
-    let fimDaFornada: Date | number = new Date(inicioDaFornada.getTime() + tempoDePreparoEmMilisegundos);
-
-    inicioDaFornada = inicioDaFornada.getTime();
-    fimDaFornada    = fimDaFornada.getTime();
-
-    console.log({id, inicioDaFornada, fimDaFornada});
-
-    await axios.post(
-      `http://localhost:8080/fornada/${id}`,
+    api.post(
+      `fornada/${breadId}`,
       {
-        inicioDaFornada,
-        fimDaFornada
+        startTime: batchStartTimestamp,
+        endTime: batchEndTimestamp
       },
-      {
-        headers: { 'Content-Type': 'application/json;charset=utf-8' }
-      }
-    );
+      { headers: { "Content-Type": "application/json;charset=utf-8" } }
+    )
+      .catch(error => { console.error(error); });
+  }
+  
+  function getBatchStartTimestamp(): number
+  {
+    const batchStartTime: Date = new Date();
+    
+    batchStartTime.setHours(Number(time.split(":")[0]));
+    batchStartTime.setMinutes(Number(time.split(":")[1]));
+    batchStartTime.setSeconds(0);
+    
+    return batchStartTime.getTime();
+  }
+  
+  function getBatchEndTimestamp(startTimestamp: number): number
+  {
+    const preparationTime  : number = (chosedBread?.preparationTime ?? 0) * 1000;
+    const batchEndTimestamp: number = startTimestamp + preparationTime;
 
-    setTime("");
+    return batchEndTimestamp;
   }
 
   return (
@@ -78,17 +85,15 @@ function Baker()
         <tbody>
 
           {
-            (paes as Array<any>).map((pao, index) => {
+            breadList.map((bread, index) => {
               return (
-                <tr key={index} >
-                  <th>
-                    {index}
-                  </th>
-                  <td>{pao.nome}</td>
-                  <td>{pao.descricao}</td>
-                  <td>{pao.tempoDePreparoEmSegundos}</td>
+                <tr key={uuid4()} >
+                  <th>{index}</th>
+                  <td>{bread.name}</td>
+                  <td>{bread.description}</td>
+                  <td>{bread.preparationTime}</td>
                   <td>
-                    <button type="button" className="btn btn-primary" data-bs-toggle="modal" data-bs-target="#staticBackdrop" onClick={() => setChosedBreadId(pao.id)} >
+                    <button type="button" className="btn btn-primary" data-bs-toggle="modal" data-bs-target="#staticBackdrop" onClick={() => setChosedBreadId(bread.id)} >
                       Cadastrar Fornada
                     </button>
                   </td>
@@ -109,13 +114,13 @@ function Baker()
             </div>
 
             <div className="modal-body">
-              <p>Informe o horário exato em que a fornada {chosedBread?.nome ?? ""} iniciou: </p>
+              <p>Informe o horário exato em que a fornada {chosedBread?.name ?? ""} iniciou: </p>
               <input type="time" name="" id="" value={time} onChange={(e) => { setTime(e.target.value); }} />
             </div>
 
             <div className="modal-footer">
               <button type="button" className="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
-              <button type="button" className="btn btn-primary" onClick={criaFornada}  >Criar Fornada</button>
+              <button type="button" className="btn btn-primary" onClick={createBatch}>Criar Fornada</button>
             </div>
           </div>
         </div>

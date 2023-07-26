@@ -1,51 +1,43 @@
 import { useState, useEffect } from "react";
-import axios from "axios";
+import { Link }                from "react-router-dom";
+import { v4 as uuid4 }         from "uuid";
+
+import { Bread } from "../../types/Bread";
+import { api }   from "../../lib/axios";
 
 import "./styles.scss";
-import ModalDetalhe from "../../components/ModalDetalhe";
-import { Link } from "react-router-dom";
 
 function BakeryOwner()
 {
-  const [nome, setNome] = useState<string>('');
-  const [descricao, setDescricao] = useState<string>('');
-  const [tempoDePreparoEmSegundos, setTempoDePreparoEmSegundos] = useState<number>(0);
+  const [breadList, setBreadList] = useState<Bread[]>([]);
 
-  const [paes, setPaes] = useState<any>([]);
+  const [name           , setName           ] = useState<string>('');
+  const [description    , setDescription    ] = useState<string>('');
+  const [preparationTime, setPreparationTime] = useState<number>(0);
 
-  const submitForm = async () => {
-    await axios.post(
-      'http://localhost:8080/pao',
-      {
-        nome,
-        descricao,
-        tempoDePreparoEmSegundos
-      },
-      {
-        headers: {
-          'Content-Type': 'application/json;charset=utf-8'
-        }
-      }
-    );
+  useEffect(refreshTable, []);
 
-    setNome('');
-    setDescricao('');
-    setTempoDePreparoEmSegundos(0);
+  function submitForm()
+  {
+    api.post(
+      `bread`,
+      { name, description, preparationTime },
+      { headers: { "Content-Type": "application/json;charset=utf-8" } }
+    )
+      .catch(error => { console.error(error); });
+
+    setName("");
+    setDescription("");
+    setPreparationTime(0);
 
     refreshTable();
   }
 
-  useEffect(refreshTable, []);
-
   function refreshTable()
   {
-    async function fetchData()
-    {
-      const response = await axios.get('http://localhost:8080/pao');
-      setPaes(response.data);
-    }
-
-    fetchData();
+    api.get<Bread[]>(`bread`)
+      .then(response => { setBreadList(response.data); })
+      .catch(error => { console.error(error); });
   }
 
   return (
@@ -68,22 +60,22 @@ function BakeryOwner()
                 <input
                   type="text"
                   className="form-control"
-                  value={nome}
-                  onChange={(e) => setNome(e.target.value)}
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
                 /><br />
                 Descrição:
                 <input
                   type="text"
                   className="form-control"
-                  value={descricao}
-                  onChange={(e) => setDescricao(e.target.value)}
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
                 /><br />
                 Tempo de Preparo (em segundos):
                 <input
                   type="number"
                   className="form-control"
-                  value={tempoDePreparoEmSegundos}
-                  onChange={(e) => setTempoDePreparoEmSegundos(Number(e.target.value))}
+                  value={preparationTime}
+                  onChange={(e) => setPreparationTime(Number(e.target.value))}
                 />
             </div>
 
@@ -107,25 +99,15 @@ function BakeryOwner()
         <tbody>
 
           {
-            (paes as Array<any>).map((pao, index) => {
+            breadList.map((bread, index) => {
               return (
-                <tr key={index} >
-                  <th>
-                    <Link to={`/details/${pao.id}`} >
-                      {index}
-                    </Link>
-                    <ModalDetalhe
-                      id={index}
-                      nome={pao.nome}
-                      descricao={pao.descricao}
-                      tempoPreparo={pao.tempoDePreparoEmSegundos}
-                    />
-                  </th>
-                  <td>{pao.nome}</td>
-                  <td>{pao.descricao}</td>
-                  <td>{pao.tempoDePreparoEmSegundos}</td>
+                <tr key={uuid4()}>
+                  <th><Link to={`/details/${bread.id}`}>{index}</Link></th>
+                  <td>{bread.name}</td>
+                  <td>{bread.description}</td>
+                  <td>{bread.preparationTime} segundos</td>
                 </tr>
-              );
+              )
             })
           }
 

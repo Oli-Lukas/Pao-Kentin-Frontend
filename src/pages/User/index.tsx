@@ -1,43 +1,40 @@
 import { useState, useEffect } from "react";
-import axios from 'axios';
+import { v4 as uuid4 }         from "uuid";
+
+import { api }   from "../../lib/axios";
+import { Bread } from "../../types/Bread";
+import { Batch } from "../../types/Batch";
 
 import "./styles.scss";
 
 function User()
 {
-  const [paes, setPaes] = useState<any>([]);
-  const [ultimasFornadas, setUltimasFornadas] = useState<any>([]);
+  const [breadList  , setBreadList  ] = useState<Bread[]>([]);
+  const [lastBatches, setLastBatches] = useState<Batch[]>([]);
 
-  useEffect(() => {
+  useEffect(loadAllBreads  , []);
+  useEffect(loadLastBatches, [breadList]);
 
-    async function fetchPaes()
+  function loadAllBreads()
+  {
+    api.get<Bread[]>(`bread`)
+      .then(response => { setBreadList(response.data); })
+      .catch(error => { console.error(error); });
+  }
+
+  function loadLastBatches()
+  {
+    const batches: Batch[] = [];
+
+    for (const bread of breadList)
     {
-      const response = await axios.get(`http://localhost:8080/pao`);
-      setPaes(response.data);
+      api.get<Batch>(`fornada/last/${bread.id}`)
+        .then(response => { batches.push(response.data); })
+        .catch(error => { console.error(error); });
     }
 
-    fetchPaes();
-
-  }, []);
-
-  useEffect(() => {
-
-    async function fetchData()
-    {
-      let fornadas = [];
-
-      for (let pao of paes)
-      {
-        let fornada = await axios.get(`http://localhost:8080/fornada/last/${pao.id}`);
-        fornadas.push(fornada.data);
-      }
-
-      setUltimasFornadas(fornadas);
-    }
-
-    fetchData();
-    
-  }, [paes]);
+    setLastBatches(batches);
+  }
 
   return (
     <div className="user">
@@ -53,16 +50,15 @@ function User()
         <tbody>
 
           {
-            ultimasFornadas.map((fornada, index) => {
+            lastBatches.map((batch, index) => {
               return (
-                <tr key={index} >
+                <tr key={uuid4()}>
                   <td>{index}</td>
-                  <td>{fornada.tipoDePao.nome}</td>
-                  <td>{fornada.fimDaFornada}</td>
+                  <td>{batch.bread.name}</td>
+                  <td>{batch.endTime.toString()}</td>
                 </tr>
               );
             })
-
           }
 
         </tbody>
